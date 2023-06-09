@@ -4,8 +4,7 @@ require("dotenv").config();
 const app = express();
 const dbUser = process.env.DB_USER;
 const dbPass = process.env.DB_PASS;
-const token = process.env.TOKEN;
-console.log(token);
+const accessToken = process.env.TOKEN;
 
 const jwt = require("jsonwebtoken");
 //port config
@@ -26,13 +25,39 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 });
-
+const verifyJWT = (req, res, next) => {
+  const authorization = req.headers.authorization;
+  if (!authorization) {
+    return res
+      .status(401)
+      .send({ error: true, message: "Unauthorized access" });
+  }
+  // check token
+  const token = authorization.split(" ")[1];
+  jwt.verify(token, accessToken, (err, decoded) => {
+    if (err) {
+      return res.status(403).send({ error: true, message: "Forbidden access" });
+    }
+    req.decoded = decoded;
+    next();
+  });
+};
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
     const classesCollection = client.db("jive").collection("classes");
     const usersCollection = client.db("jive").collection("users");
+
+    //generate jwt
+    app.post("/jwt", (req, res) => {
+      const body = req.body;
+      console.log(body);
+
+      const token = jwt.sign(body, accessToken, { expiresIn: "1h" });
+
+      res.send(token);
+    });
 
     //load all classes
     app.get("/classes", async (req, res) => {
