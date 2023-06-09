@@ -51,6 +51,7 @@ async function run() {
     // await client.connect();
     const classesCollection = client.db("jive").collection("classes");
     const instructorCollection = client.db("jive").collection("instructor");
+    const usersCollection = client.db("jive").collection("users");
     const selectedClassCollection = client
       .db("jive")
       .collection("selectedClass");
@@ -61,6 +62,10 @@ async function run() {
       const token = jwt.sign(body, accessToken, { expiresIn: "1h" });
       res.send(token);
     });
+
+    //users  manage
+
+    
 
     //load all classes
     app.get("/classes", verifyJWT, async (req, res) => {
@@ -81,7 +86,7 @@ async function run() {
     });
 
     // get selected classes
-    app.get("/selected-class",verifyJWT, async (req, res) => {
+    app.get("/selected-class", verifyJWT, async (req, res) => {
       const email = req.query.email;
       console.log(email);
       if (!email) {
@@ -91,7 +96,7 @@ async function run() {
       }
       const decodeEmail = req.decoded.email;
       console.log(decodeEmail);
-      
+
       if (email !== decodeEmail) {
         return res
           .status(401)
@@ -101,6 +106,15 @@ async function run() {
       const result = await selectedClassCollection.find(query).toArray();
       res.send(result);
     });
+
+    //delete selected Classes
+    app.delete("/selected-class/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await selectedClassCollection.deleteOne(query);
+      res.send(result);
+    });
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
