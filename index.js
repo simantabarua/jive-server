@@ -33,11 +33,11 @@ const verifyJWT = (req, res, next) => {
       .send({ error: true, message: "Unauthorized access" });
   }
   console.log(authorization);
-  
+
   // check token
   const token = authorization.split(" ")[1];
   console.log(token);
-  
+
   jwt.verify(token, accessToken, (err, decoded) => {
     if (err) {
       return res.status(403).send({ error: true, message: "Forbidden access" });
@@ -51,24 +51,37 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
     const classesCollection = client.db("jive").collection("classes");
-    const usersCollection = client.db("jive").collection("users");
+    const instructorCollection = client.db("jive").collection("instructor");
+    const selectedClassCollection = client
+      .db("jive")
+      .collection("selectedClass");
 
     //generate jwt
     app.post("/jwt", (req, res) => {
       const body = req.body;
-      console.log(body);
-
       const token = jwt.sign(body, accessToken, { expiresIn: "1h" });
-
       res.send(token);
     });
 
     //load all classes
-    app.get("/classes",verifyJWT, async (req, res) => {
+    app.get("/classes", verifyJWT, async (req, res) => {
       const classes = await classesCollection.find({}).toArray();
       res.send(classes);
     });
+    app.get("/instructors", async (req, res) => {
+      const classes = await instructorCollection.find({}).toArray();
+      res.send(classes);
+    });
 
+    // selected class
+    app.post("/selected-class", async (req, res) => {
+      const selectedCardData = req.body;
+      console.log(selectedCardData);
+      
+      result = await selectedClassCollection.insertOne(selectedCardData);
+      res.send(result);
+    });
+    
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
