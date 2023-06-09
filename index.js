@@ -65,7 +65,33 @@ async function run() {
 
     //users  manage
 
-    
+    //create user
+    app.post("/users", async (req, res) => {
+      const user = req.body;
+      const query = { email: user.email };
+      console.log(user.email);
+      const isUserExist = await usersCollection.findOne(query);
+      console.log("is", isUserExist);
+
+      if (isUserExist) {
+        return res.send("user exist");
+      }
+      const result = await usersCollection.insertOne(user);
+      res.send(result);
+    });
+    //get all user by admin
+    app.get("/users", verifyJWT, async (req, res) => {
+      const email = req.query.email;
+      const query = { email: email, role: "admin" };
+      const isAdmin = await usersCollection.findOne(query);
+      if (!isAdmin) {
+        return res
+          .status(403)
+          .send({ error: true, message: "Forbidden access" });
+      }
+      const result = await usersCollection.find({}).toArray();
+      res.send(result);
+    });
 
     //load all classes
     app.get("/classes", verifyJWT, async (req, res) => {
