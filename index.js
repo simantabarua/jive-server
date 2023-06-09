@@ -32,7 +32,6 @@ const verifyJWT = (req, res, next) => {
       .status(401)
       .send({ error: true, message: "Unauthorized access" });
   }
-  console.log(authorization);
 
   // check token
   const token = authorization.split(" ")[1];
@@ -77,11 +76,31 @@ async function run() {
     app.post("/selected-class", async (req, res) => {
       const selectedCardData = req.body;
       console.log(selectedCardData);
-      
-      result = await selectedClassCollection.insertOne(selectedCardData);
+      const result = await selectedClassCollection.insertOne(selectedCardData);
       res.send(result);
     });
-    
+
+    // get selected classes
+    app.get("/selected-class",verifyJWT, async (req, res) => {
+      const email = req.query.email;
+      console.log(email);
+      if (!email) {
+        return res
+          .status(401)
+          .send({ error: true, message: "Unauthorized access" });
+      }
+      const decodeEmail = req.decoded.email;
+      console.log(decodeEmail);
+      
+      if (email !== decodeEmail) {
+        return res
+          .status(401)
+          .send({ error: true, message: "Forbidden access" });
+      }
+      const query = { email: email };
+      const result = await selectedClassCollection.find(query).toArray();
+      res.send(result);
+    });
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
