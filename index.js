@@ -4,7 +4,10 @@ require("dotenv").config();
 const app = express();
 const dbUser = process.env.DB_USER;
 const dbPass = process.env.DB_PASS;
+const token = process.env.TOKEN;
+console.log(token);
 
+const jwt = require("jsonwebtoken");
 //port config
 const port = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
@@ -50,9 +53,9 @@ async function run() {
 run().catch(console.dir);
 
 app.get("/", (req, res) => {
-  res.send("Pixiepia server is running");
+  res.send("Jive server is running");
 });
 
 app.listen(port, () => {
-  console.log(`Pixiepia server is running on port ${port}`);
+  console.log(`Jive server is running on port ${port}`);
 });
