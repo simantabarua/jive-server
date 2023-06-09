@@ -32,8 +32,12 @@ const verifyJWT = (req, res, next) => {
       .status(401)
       .send({ error: true, message: "Unauthorized access" });
   }
+  console.log(authorization);
+  
   // check token
   const token = authorization.split(" ")[1];
+  console.log(token);
+  
   jwt.verify(token, accessToken, (err, decoded) => {
     if (err) {
       return res.status(403).send({ error: true, message: "Forbidden access" });
@@ -60,7 +64,7 @@ async function run() {
     });
 
     //load all classes
-    app.get("/classes", async (req, res) => {
+    app.get("/classes",verifyJWT, async (req, res) => {
       const classes = await classesCollection.find({}).toArray();
       res.send(classes);
     });
