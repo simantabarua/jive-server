@@ -91,7 +91,6 @@ async function run() {
           .status(403)
           .send({ error: true, message: "Forbidden access" });
       }
-
       const result = await usersCollection.find({}).toArray();
       res.send(result);
     });
@@ -104,6 +103,9 @@ async function run() {
       res.send(user.role);
     });
 
+    //change user role
+    app.patch("/change-user-role", async (req, res) => {});
+
     //load all classes
     app.get("/classes", verifyJWT, async (req, res) => {
       const classes = await classesCollection.find({}).toArray();
@@ -112,6 +114,12 @@ async function run() {
     app.get("/instructors", async (req, res) => {
       const classes = await instructorCollection.find({}).toArray();
       res.send(classes);
+    });
+    // add class
+    app.post("/add-class", async (req, res) => {
+      const newClass = req.body;
+      const result = await classesCollection.insertOne(newClass);
+      res.send(result);
     });
 
     // selected class
@@ -151,6 +159,8 @@ async function run() {
       const result = await selectedClassCollection.deleteOne(query);
       res.send(result);
     });
+
+    // add class
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
