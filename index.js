@@ -76,6 +76,8 @@ async function run() {
       const result = await usersCollection.insertOne(user);
       res.send(result);
     });
+
+    // ---------------------------------- Manage user start -------------------------------//
     //get all user by admin
     app.get("/users", verifyJWT, async (req, res) => {
       const email = req.query.email;
@@ -104,12 +106,46 @@ async function run() {
     });
 
     //change user role
-    app.patch("/change-user-role", async (req, res) => {});
+    app.patch("/change-user-role/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          role: req.body.role  
+        }
+      };
+      const result = await usersCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    })
+
+    //
+
+ // ---------------------------------- Manage user  end-------------------------------//
+
 
     //load all classes
     app.get("/classes", verifyJWT, async (req, res) => {
       const classes = await classesCollection.find({}).toArray();
       res.send(classes);
+    });
+    app.get("/instructor-classes",verifyJWT,  async (req, res) => {
+      const email = req.query.email;
+      if (!email) {
+        return res
+          .status(401)
+          .send({ error: true, message: "Unauthorized access" });
+      }
+      const decodeEmail = req.decoded.email;
+      console.log(decodeEmail);
+
+      if (email !== decodeEmail) {
+        return res
+          .status(401)
+          .send({ error: true, message: "Forbidden access" });
+      }0
+      const query = { email: email };
+      const result = await classesCollection.find(query).toArray();
+      res.send(result);
     });
     app.get("/instructors", async (req, res) => {
       const classes = await instructorCollection.find({}).toArray();
