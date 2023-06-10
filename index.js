@@ -35,8 +35,6 @@ const verifyJWT = (req, res, next) => {
 
   // check token
   const token = authorization.split(" ")[1];
-  console.log(token);
-
   jwt.verify(token, accessToken, (err, decoded) => {
     if (err) {
       return res.status(403).send({ error: true, message: "Forbidden access" });
@@ -72,7 +70,6 @@ async function run() {
       console.log(user.email);
       const isUserExist = await usersCollection.findOne(query);
       console.log("is", isUserExist);
-
       if (isUserExist) {
         return res.send("user exist");
       }
@@ -84,13 +81,27 @@ async function run() {
       const email = req.query.email;
       const query = { email: email, role: "admin" };
       const isAdmin = await usersCollection.findOne(query);
+      if (req.decoded.email !== email) {
+        return res
+          .status(403)
+          .send({ error: true, message: "Forbidden access" });
+      }
       if (!isAdmin) {
         return res
           .status(403)
           .send({ error: true, message: "Forbidden access" });
       }
+
       const result = await usersCollection.find({}).toArray();
       res.send(result);
+    });
+
+    // check user
+    app.get("/check-user", verifyJWT, async (req, res) => {
+      const email = req.query.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      res.send(user.role);
     });
 
     //load all classes
