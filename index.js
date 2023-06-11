@@ -8,7 +8,7 @@ const accessToken = process.env.TOKEN;
 
 const jwt = require("jsonwebtoken");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-
+const stripe = require("stripe")(process.env.PAYMENT_SECRET_KEY);
 // Port config
 const port = process.env.PORT || 5000;
 
@@ -68,8 +68,8 @@ async function run() {
     // Connect the client to the server (optional starting in v4.7)
     // await client.connect();
     const classesCollection = client.db("jive").collection("classes");
-    const instructorCollection = client.db("jive").collection("instructor");
     const usersCollection = client.db("jive").collection("users");
+    const paymentCollection = client.db("jive").collection("payment");
     const selectedClassCollection = client
       .db("jive")
       .collection("selectedClass");
@@ -89,7 +89,8 @@ async function run() {
 
     // Load all  instructors
     app.get("/instructors", async (req, res) => {
-      const classes = await instructorCollection.find({}).toArray();
+      const query = { role: "instructor" };
+      const classes = await usersCollection.find(query).toArray();
       res.send(classes);
     });
 
@@ -136,6 +137,16 @@ async function run() {
     // Change user role
     app.patch("/change-user-role/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
+      const email = req.body.email;
+      const query = { email: email, role: "admin" };
+      const isAdmin = await usersCollection.findOne(query);
+      const decodedEmail = req.decoded.email;
+      checkAccess(email, decodedEmail, res);
+      if (!isAdmin) {
+        return res
+          .status(403)
+          .send({ error: true, message: "Forbidden access" });
+      }
       const filter = { _id: new ObjectId(id) };
       const updateDoc = {
         $set: {
@@ -250,6 +261,31 @@ async function run() {
     });
 
     // ---------------------------------- Manage Classes end -------------------------------//
+
+    // create payment intent
+    app.post("/payment-intent", verifyJWT, async (req, res) => {
+      const { price } = req.body;
+      const amount = parseInt(price * 100);
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
+
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
+
+    app.post("/payments", verifyJWT, async (req, res) => {
+      const payment = req.body;
+      const insertResult = await paymentCollection.insertOne(payment);
+      const query = {
+        _id: { $in: payment.classesItems.map((id) => new ObjectId(id)) },
+      };
+      const deleteResult = await selectedClassCollection.deleteMany(query);
+      res.send({ insertResult, deleteResult });
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
