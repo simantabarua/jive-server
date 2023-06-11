@@ -158,6 +158,14 @@ async function run() {
 
     // ---------------------------------- Manage Classes -------------------------------//
 
+    //load single class
+    app.get("/class/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const classes = await classesCollection.findOne(query);
+      res.send(classes);
+    });
+
     // Get  classes by instructor
     app.get("/instructor-classes", verifyJWT, async (req, res) => {
       const email = req.query.email;
@@ -172,6 +180,25 @@ async function run() {
     app.post("/add-class", verifyJWT, async (req, res) => {
       const newClass = req.body;
       const result = await classesCollection.insertOne(newClass);
+      res.send(result);
+    });
+
+    //update Class
+    app.patch("/update-class/:id", async (req, res) => {
+      const newClass = req.body;
+      const { className, availableSeats, image, price } = newClass;
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          className: className,
+          availableSeats: availableSeats,
+          image: image,
+          price: price,
+          classStatus: "pending",
+        },
+      };
+      const result = await classesCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
 
