@@ -233,7 +233,7 @@ async function run() {
       const email = req.query.email;
       const query = { email: email };
       const user = await usersCollection.findOne(query);
-      res.send(user.role);
+      res.send(user?.role);
     });
 
     // Change user role
