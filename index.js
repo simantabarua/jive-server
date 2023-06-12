@@ -78,12 +78,28 @@ async function run() {
       res.send(token);
     });
 
-    // Load all classes
+    // Load approved classes
     app.get("/classes", async (req, res) => {
-      const classes = await classesCollection.find({}).toArray();
-      res.send(classes);
+      const approvedClasses = await classesCollection
+        .find({ classStatus: "approved" })
+        .toArray();
+      res.send(approvedClasses);
     });
-
+    
+    // Load all classes
+    app.get("/classes-all", verifyJWT, async (req, res) => {
+      const email = req.query.email;
+      const decodedEmail = req.decoded.email;
+      checkAccess(email, decodedEmail, res);
+      try {
+        await checkAdmin(email);
+        const approvedClasses = await classesCollection.find({}).toArray();
+        res.send(approvedClasses);
+      } catch (error) {
+        console.error("Error occurred:", error);
+        res.status(500).send({ error: true, message: "Internal server error" });
+      }
+    });
     //checkAdmin
     const checkAdmin = async (email) => {
       const query = { email: email, role: "admin" };
@@ -153,29 +169,39 @@ async function run() {
     // change order status
     app.patch("/orders/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
-      const email = req.body.email;
-      console.log('er', email);
-      
+      const order = req.body;
+      const email = order.email;
+      const query = {
+        _id: { $in: order.classesId.map((id) => new ObjectId(id)) },
+      };
       const decodedEmail = req.decoded.email;
-      
+
       try {
         await checkAdmin(email);
         checkAccess(email, decodedEmail, res);
-        
+
         const filter = { _id: new ObjectId(id) };
         const updateDoc = {
           $set: {
-            status: req.body.status,
+            status: order.status,
           },
         };
+        const updateClassDoc = {
+          $inc: { availableSeats: -1, totalEnroll: 1 },
+        };
+
+        const updateClasses = await classesCollection.updateMany(
+          query,
+          updateClassDoc
+        );
         const result = await paymentCollection.updateOne(filter, updateDoc);
+
         res.send(result);
       } catch (error) {
         console.error("Error occurred:", error);
         res.status(500).send({ error: true, message: "Internal server error" });
       }
     });
-    
 
     // Check user
     app.get("/check-user", verifyJWT, async (req, res) => {
@@ -343,6 +369,7 @@ async function run() {
       const query = {
         _id: { $in: payment.classesItems.map((id) => new ObjectId(id)) },
       };
+
       const deleteResult = await selectedClassCollection.deleteMany(query);
       res.send({ insertResult, deleteResult });
     });
