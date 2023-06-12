@@ -85,7 +85,16 @@ async function run() {
         .toArray();
       res.send(approvedClasses);
     });
-    
+
+    // Load popular classes
+    app.get("/classes-popular", async (req, res) => {
+      const popularClasses = await classesCollection
+        .find({})
+        .sort({ totalEnroll: -1 })
+        .toArray();
+      res.send(popularClasses);
+    });
+
     // Load all classes
     app.get("/classes-all", verifyJWT, async (req, res) => {
       const email = req.query.email;
@@ -118,6 +127,16 @@ async function run() {
     app.get("/instructors", async (req, res) => {
       const query = { role: "instructor" };
       const classes = await usersCollection.find(query).toArray();
+      res.send(classes);
+    });
+
+    // Load popular   instructors
+    app.get("/instructors-popular", async (req, res) => {
+      const query = { role: "instructor" };
+      const classes = await usersCollection
+        .find(query)
+        .sort({ totalStudents: -1 })
+        .toArray();
       res.send(classes);
     });
 
@@ -170,6 +189,7 @@ async function run() {
     app.patch("/orders/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const order = req.body;
+      const instructorEmail = order.instructorEmail;
       const email = order.email;
       const query = {
         _id: { $in: order.classesId.map((id) => new ObjectId(id)) },
@@ -190,12 +210,17 @@ async function run() {
           $inc: { availableSeats: -1, totalEnroll: 1 },
         };
 
+        const insQuery = { email: { $in: instructorEmail } };
+        const updateStudent = {
+          $inc: { totalStudents: 1 },
+        };
+
+        await usersCollection.updateMany(insQuery, updateStudent);
         const updateClasses = await classesCollection.updateMany(
           query,
           updateClassDoc
         );
         const result = await paymentCollection.updateOne(filter, updateDoc);
-
         res.send(result);
       } catch (error) {
         console.error("Error occurred:", error);
@@ -220,11 +245,23 @@ async function run() {
       try {
         await checkAdmin(email);
         const filter = { _id: new ObjectId(id) };
-        const updateDoc = {
-          $set: {
-            role: req.body.role,
-          },
-        };
+        let updateDoc = {};
+
+        if (req.body.role === "instructor") {
+          updateDoc = {
+            $set: {
+              role: req.body.role,
+              totalStudents: 0,
+            },
+          };
+        } else {
+          updateDoc = {
+            $set: {
+              role: req.body.role,
+            },
+          };
+        }
+
         const result = await usersCollection.updateOne(filter, updateDoc);
         res.send(result);
       } catch (error) {
@@ -258,7 +295,7 @@ async function run() {
       const email = req.query.email;
       const decodedEmail = req.decoded.email;
       checkAccess(email, decodedEmail, res);
-      const query = { email: email };
+      const query = { instructorEmail: email };
       const result = await classesCollection.find(query).toArray();
       res.send(result);
     });
@@ -292,12 +329,22 @@ async function run() {
     // Change class status
     app.patch("/change-class/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
+      const instructorEmail = req.body.instructorEmail;
+      const query = { email: instructorEmail }; // Assuming the email field is named 'email' in the usersCollection
+
       const filter = { _id: new ObjectId(id) };
+      const updateClassDoc = {
+        $inc: { numberOfClasses: 1 },
+      };
       const updateDoc = {
         $set: {
           classStatus: req.body.status,
         },
       };
+      const updateInstructorClass = await usersCollection.updateOne(
+        query,
+        updateClassDoc
+      );
       const result = await classesCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
@@ -369,6 +416,7 @@ async function run() {
       const query = {
         _id: { $in: payment.classesItems.map((id) => new ObjectId(id)) },
       };
+      console.log("payment", payment);
 
       const deleteResult = await selectedClassCollection.deleteMany(query);
       res.send({ insertResult, deleteResult });
