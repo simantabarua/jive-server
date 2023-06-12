@@ -93,6 +93,8 @@ async function run() {
           .status(403)
           .send({ error: true, message: "Forbidden access" });
       }
+      console.log(isAdmin);
+
       return isAdmin;
     };
 
@@ -133,7 +135,7 @@ async function run() {
       }
     });
 
-    //load all orders 
+    //load all orders
     app.get("/orders", verifyJWT, async (req, res) => {
       const email = req.query.email;
       const decodedEmail = req.decoded.email;
@@ -148,6 +150,33 @@ async function run() {
       }
     });
 
+    // change order status
+    app.patch("/orders/:id", verifyJWT, async (req, res) => {
+      const id = req.params.id;
+      const email = req.body.email;
+      console.log('er', email);
+      
+      const decodedEmail = req.decoded.email;
+      
+      try {
+        await checkAdmin(email);
+        checkAccess(email, decodedEmail, res);
+        
+        const filter = { _id: new ObjectId(id) };
+        const updateDoc = {
+          $set: {
+            status: req.body.status,
+          },
+        };
+        const result = await paymentCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      } catch (error) {
+        console.error("Error occurred:", error);
+        res.status(500).send({ error: true, message: "Internal server error" });
+      }
+    });
+    
+
     // Check user
     app.get("/check-user", verifyJWT, async (req, res) => {
       const email = req.query.email;
@@ -160,8 +189,6 @@ async function run() {
     app.patch("/change-user-role/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const email = req.body.email;
-      const query = { email: email, role: "admin" };
-      const isAdmin = await usersCollection.findOne(query);
       const decodedEmail = req.decoded.email;
       checkAccess(email, decodedEmail, res);
       try {
