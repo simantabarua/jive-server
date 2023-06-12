@@ -55,9 +55,6 @@ const checkAccess = (email, decodedEmail, res) => {
       .status(401)
       .send({ error: true, message: "Unauthorized access" });
   }
-
-  console.log(decodedEmail);
-
   if (email !== decodedEmail) {
     return res.status(403).send({ error: true, message: "Forbidden access" });
   }
@@ -87,6 +84,18 @@ async function run() {
       res.send(classes);
     });
 
+    //checkAdmin
+    const checkAdmin = async (email) => {
+      const query = { email: email, role: "admin" };
+      const isAdmin = await usersCollection.findOne(query);
+      if (!isAdmin) {
+        return res
+          .status(403)
+          .send({ error: true, message: "Forbidden access" });
+      }
+      return isAdmin;
+    };
+
     // Load all  instructors
     app.get("/instructors", async (req, res) => {
       const query = { role: "instructor" };
@@ -112,18 +121,31 @@ async function run() {
     // Get all users by admin
     app.get("/users", verifyJWT, async (req, res) => {
       const email = req.query.email;
-      const query = { email: email, role: "admin" };
-      const isAdmin = await usersCollection.findOne(query);
       const decodedEmail = req.decoded.email;
       checkAccess(email, decodedEmail, res);
-
-      if (!isAdmin) {
-        return res
-          .status(403)
-          .send({ error: true, message: "Forbidden access" });
+      try {
+        await checkAdmin(email);
+        const result = await usersCollection.find({}).toArray();
+        res.send(result);
+      } catch (error) {
+        console.error("Error occurred:", error);
+        res.status(500).send({ error: true, message: "Internal server error" });
       }
-      const result = await usersCollection.find({}).toArray();
-      res.send(result);
+    });
+
+    //load all orders 
+    app.get("/orders", verifyJWT, async (req, res) => {
+      const email = req.query.email;
+      const decodedEmail = req.decoded.email;
+      checkAccess(email, decodedEmail, res);
+      try {
+        await checkAdmin(email);
+        const result = await paymentCollection.find({}).toArray();
+        res.send(result);
+      } catch (error) {
+        console.error("Error occurred:", error);
+        res.status(500).send({ error: true, message: "Internal server error" });
+      }
     });
 
     // Check user
@@ -142,19 +164,20 @@ async function run() {
       const isAdmin = await usersCollection.findOne(query);
       const decodedEmail = req.decoded.email;
       checkAccess(email, decodedEmail, res);
-      if (!isAdmin) {
-        return res
-          .status(403)
-          .send({ error: true, message: "Forbidden access" });
+      try {
+        await checkAdmin(email);
+        const filter = { _id: new ObjectId(id) };
+        const updateDoc = {
+          $set: {
+            role: req.body.role,
+          },
+        };
+        const result = await usersCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      } catch (error) {
+        console.error("Error occurred:", error);
+        res.status(500).send({ error: true, message: "Internal server error" });
       }
-      const filter = { _id: new ObjectId(id) };
-      const updateDoc = {
-        $set: {
-          role: req.body.role,
-        },
-      };
-      const result = await usersCollection.updateOne(filter, updateDoc);
-      res.send(result);
     });
 
     // Delete user
@@ -241,6 +264,16 @@ async function run() {
       checkAccess(email, decodedEmail, res);
       const query = { email: email };
       const result = await selectedClassCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // Get enroll classes
+    app.get("/enroll-class", verifyJWT, async (req, res) => {
+      const email = req.query.email;
+      const decodedEmail = req.decoded.email;
+      checkAccess(email, decodedEmail, res);
+      const query = { email: email };
+      const result = await paymentCollection.find(query).toArray();
       res.send(result);
     });
 
