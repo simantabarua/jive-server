@@ -350,9 +350,13 @@ async function run() {
     });
 
     //load  selected class
-    app.post("/selected-class", verifyJWT, async (req, res) => {
+    app.post("/selected-class",verifyJWT, async (req, res) => {
+      const email = req.query.email;
+      console.log('edd', email);
+      
+      const decodedEmail = req.decoded.email;
+      checkAccess(email, decodedEmail, res);
       const selectedCardData = req.body;
-      console.log(selectedCardData);
       const result = await selectedClassCollection.insertOne(selectedCardData);
       res.send(result);
     });
@@ -360,6 +364,8 @@ async function run() {
     // Get selected classes
     app.get("/selected-class", verifyJWT, async (req, res) => {
       const email = req.query.email;
+      console.log('er', email);
+      
       const decodedEmail = req.decoded.email;
       checkAccess(email, decodedEmail, res);
       const query = { email: email };
