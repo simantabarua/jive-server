@@ -330,8 +330,7 @@ async function run() {
     app.patch("/change-class/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const instructorEmail = req.body.instructorEmail;
-      const query = { email: instructorEmail }; // Assuming the email field is named 'email' in the usersCollection
-
+      const query = { email: instructorEmail }; 
       const filter = { _id: new ObjectId(id) };
       const updateClassDoc = {
         $inc: { numberOfClasses: 1 },
@@ -349,11 +348,25 @@ async function run() {
       res.send(result);
     });
 
+    //send feedback
+    app.patch('/feedback/:id', async (req, res) => { 
+      const id = req.params.id
+      const feedback = req.body.feedback;
+      const filter = {_id : new ObjectId(id)}
+      console.log('req', id);
+      const updateDoc = {
+        $set: {
+          feedback: req.body.feedback,
+        },
+      };
+      const result = await classesCollection.updateOne(filter, updateDoc);
+      res.send(result);
+     })
+
     //load  selected class
     app.post("/selected-class",verifyJWT, async (req, res) => {
       const email = req.query.email;
       console.log('edd', email);
-      
       const decodedEmail = req.decoded.email;
       checkAccess(email, decodedEmail, res);
       const selectedCardData = req.body;

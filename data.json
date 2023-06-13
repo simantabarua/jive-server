@@ -1,0 +1,82 @@
+[
+    {
+        "className": "Ballet",
+        "instructor": "Simanta Barua",
+        "instructorEmail": "simanta@example.com",
+        "image": "https://example.com/image1.jpg",
+        "availableSeats": 10,
+        "price": 100,
+        "classStatus": "approved",
+        "totalEnroll": 50
+      },
+      {
+        "className": "Hip Hop",
+        "instructor": "Emily Johnson",
+        "instructorEmail": "emily@example.com",
+        "image": "https://example.com/image2.jpg",
+        "availableSeats": 8,
+        "price": 90,
+        "classStatus": "approved",
+        "totalEnroll": 30
+      },
+      {
+        "className": "Salsa",
+        "instructor": "Carlos Rodriguez",
+        "instructorEmail": "carlos@example.com",
+        "image": "https://example.com/image3.jpg",
+        "availableSeats": 12,
+        "price": 110,
+        "classStatus": "pending",
+        "totalEnroll": 20
+      },
+      {
+        "className": "Contemporary",
+        "instructor": "Olivia Wilson",
+        "instructorEmail": "olivia@example.com",
+        "image": "https://example.com/image4.jpg",
+        "availableSeats": 15,
+        "price": 120,
+        "classStatus": "approved",
+        "totalEnroll": 40
+      },
+      {
+        "className": "Jazz",
+        "instructor": "Michael Davis",
+        "instructorEmail": "michael@example.com",
+        "image": "https://example.com/image5.jpg",
+        "availableSeats": 10,
+        "price": 100,
+        "classStatus": "approved",
+        "totalEnroll": 25
+      },
+      {
+        "className": "Pilates",
+        "instructor": "John Smith",
+        "instructorEmail": "john@example.com",
+        "image": "https://example.com/image3.jpg",
+        "availableSeats": 15,
+        "price": 120,
+        "classStatus": "approved",
+        "totalEnroll": 35
+      },
+      {
+        "className": "Zumba",
+        "instructor": "Maria Rodriguez",
+        "instructorEmail": "maria@example.com",
+        "image": "https://example.com/image4.jpg",
+        "availableSeats": 8,
+        "price": 90,
+        "classStatus": "approved",
+        "totalEnroll": 25
+      },
+      {
+        "className": "Kickboxing",
+        "instructor": "Robert Johnson",
+        "instructorEmail": "robert@example.com",
+        "image": "https://example.com/image5.jpg",
+        "availableSeats": 12,
+        "price": 110,
+        "classStatus": "pending",
+        "totalEnroll": 30
+      }
+]
