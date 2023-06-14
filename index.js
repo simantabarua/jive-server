@@ -118,7 +118,6 @@ async function run() {
           .status(403)
           .send({ error: true, message: "Forbidden access" });
       }
-      console.log(isAdmin);
 
       return isAdmin;
     };
@@ -147,7 +146,6 @@ async function run() {
       const user = req.body;
       const query = { email: user.email };
       const isUserExist = await usersCollection.findOne(query);
-      console.log("is", isUserExist);
       if (isUserExist) {
         return res.send("user exist");
       }
@@ -252,6 +250,7 @@ async function run() {
             $set: {
               role: req.body.role,
               totalStudents: 0,
+              numberOfClasses: 0,
             },
           };
         } else {
@@ -353,7 +352,6 @@ async function run() {
       const id = req.params.id
       const feedback = req.body.feedback;
       const filter = {_id : new ObjectId(id)}
-      console.log('req', id);
       const updateDoc = {
         $set: {
           feedback: req.body.feedback,
@@ -366,7 +364,6 @@ async function run() {
     //load  selected class
     app.post("/selected-class",verifyJWT, async (req, res) => {
       const email = req.query.email;
-      console.log('edd', email);
       const decodedEmail = req.decoded.email;
       checkAccess(email, decodedEmail, res);
       const selectedCardData = req.body;
@@ -377,8 +374,6 @@ async function run() {
     // Get selected classes
     app.get("/selected-class", verifyJWT, async (req, res) => {
       const email = req.query.email;
-      console.log('er', email);
-      
       const decodedEmail = req.decoded.email;
       checkAccess(email, decodedEmail, res);
       const query = { email: email };
@@ -435,7 +430,6 @@ async function run() {
       const query = {
         _id: { $in: payment.classesItems.map((id) => new ObjectId(id)) },
       };
-      console.log("payment", payment);
 
       const deleteResult = await selectedClassCollection.deleteMany(query);
       res.send({ insertResult, deleteResult });
