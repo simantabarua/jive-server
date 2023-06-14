@@ -67,6 +67,7 @@ async function run() {
     const classesCollection = client.db("jive").collection("classes");
     const usersCollection = client.db("jive").collection("users");
     const paymentCollection = client.db("jive").collection("payment");
+    const reviewsCollection = client.db("jive").collection("reviews");
     const selectedClassCollection = client
       .db("jive")
       .collection("selectedClass");
@@ -84,6 +85,12 @@ async function run() {
         .find({ classStatus: "approved" })
         .toArray();
       res.send(approvedClasses);
+    });
+
+    // Load reviews
+    app.get("/reviews", async (req, res) => {
+      const reviews = await reviewsCollection.find({}).toArray();
+      res.send(reviews);
     });
 
     // Load popular classes
@@ -329,7 +336,7 @@ async function run() {
     app.patch("/change-class/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const instructorEmail = req.body.instructorEmail;
-      const query = { email: instructorEmail }; 
+      const query = { email: instructorEmail };
       const filter = { _id: new ObjectId(id) };
       const updateClassDoc = {
         $inc: { numberOfClasses: 1 },
@@ -348,10 +355,10 @@ async function run() {
     });
 
     //send feedback
-    app.patch('/feedback/:id', async (req, res) => { 
-      const id = req.params.id
+    app.patch("/feedback/:id", async (req, res) => {
+      const id = req.params.id;
       const feedback = req.body.feedback;
-      const filter = {_id : new ObjectId(id)}
+      const filter = { _id: new ObjectId(id) };
       const updateDoc = {
         $set: {
           feedback: req.body.feedback,
@@ -359,10 +366,10 @@ async function run() {
       };
       const result = await classesCollection.updateOne(filter, updateDoc);
       res.send(result);
-     })
+    });
 
     //load  selected class
-    app.post("/selected-class",verifyJWT, async (req, res) => {
+    app.post("/selected-class", verifyJWT, async (req, res) => {
       const email = req.query.email;
       const decodedEmail = req.decoded.email;
       checkAccess(email, decodedEmail, res);
